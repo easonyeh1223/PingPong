@@ -7,8 +7,44 @@ import games.pingpong.communication as comm
 from games.pingpong.communication import (
     SceneInfo, GameStatus, PlatformAction
 )
-
+def update(self,scene_info):
+        if scene_info["status"] != "GAME_ALIVE":
+            return "RESET"
+        if not self.ball_served:
+            self.ball_served=True
+            return "SERVE_TO_LEFT"
+        else:
+            if self.side == "1P":
+                return "MOVE_LEFT"
+            elif self.side =="2P":
+                return "MOVE_RIGHT"
+            else:
+                return "NONE"
 def ml_loop(side: str):
+    ball_last=[101,101]
+    comm.ml_ready()
+    while True:
+        scene_info = comm.get_scene_info()
+        if scene_info.status == GameStatus.GAME_OVER or \
+                scene_info.status == GameStatus.GAME_PASS:
+            comm.ml_ready()
+
+            scene_info = comm.get_scene_info()
+        print(scene_info)
+
+        ball_x_end = compute_x_end(scene_info.ball, ball_last)
+        ball_last = scene_info.ball
+        move  = (ball_x_end) - (scene_info.platform[0]+20)
+        
+        if move > 0:
+            comm.send_instruction(scene_info.frame, PlatformAction.MOVE_RIGHT)
+        elif move < 0:
+            comm.send_instruction(scene_info.frame, PlatformAction.MOVE_LEFT)
+        else:
+            comm.send_instruction(scene_info.frame, PlatformAction.NONE)
+ 
+   
+   
     """
     The main loop for the machine learning process
 
